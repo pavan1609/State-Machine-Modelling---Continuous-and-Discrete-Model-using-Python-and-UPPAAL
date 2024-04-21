@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?><!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd'><nta><declaration>
+const int N = 6;  // number of floors
+typedef int[0,N-1] id_t;
+typedef int[1,N-2] upReq_t;
+int queue1 = 0, queue2 = 0; 
+int elevatorf1= 0;
+int elevatorf2= 0;  
+
+chan request_up[N], request_down[N], ack[N], request;
+
+</declaration><template><name x="5" y="5">elevator1</name><declaration>clock x;
+int currentFloor = 0;
+int targetFloor = 0;
+int list[20]; 
+int len = 0;
+bool moveup = 0;
+bool movedown = 0;
+
+//first element
+id_t front()
+{
+   	return list[0];
+}
+
+// last element
+id_t tail()
+{
+	return list[len - 1];
+}
+void target() {
+	targetFloor = front();
+}
+
+void check() {
+	if (len == 0) {
+		moveup = 0;
+		movedown = 0;
+	}
+}
+
+void sort(bool type, int n)
+{
+	int i, j, temp = 0;
+	bool swapped;
+	if (type) {
+		for (i = 0; i &lt; n - 1; i++) {
+		swapped = false;
+		for (j = 0; j &lt; n - i - 1; j++) {
+			if (list[j] &gt; list[j + 1]) {
+				temp = list[j];
+				list[j] = list[j+1];
+				list[j+1] = temp;
+				swapped = true;
+			}
+		}
+		if (swapped == false)
+		i = n;	// Break
+		}
+	} else {
+			for (i = 0; i &lt; n - 1; i++) {
+			swapped = false;
+			for (j = 0; j &lt; n - i - 1; j++) {
+			if (list[j] &lt; list[j + 1]) {
+				temp = list[j];
+				list[j] = list[j+1];
+				list[j+1] = temp;
+				swapped = true;
+			}
+		}
+		if (swapped == false)
+		i = n;	// Break
+		}
+	}
+}
+// Adding element to the queue and sorting
+bool Ascending = true;
+void enqueue(id_t element)
+{	
+        list[len] = element;
+	len++;
+	queue1 = len;
+	if (len &gt; 1) {
+		sort(Ascending, len);
+	}
+	target();
+}
+
+// Remove the front element of the queue
+void dequeue()
+{
+        int i = 0;
+        len--;
+	queue1 = len;
+        while (i &lt; len)
+        {
+                list[i] = list[i + 1];
+                i++;
+        }
+        list[i] = 0;
+}
+
+</declaration><location id="id0" x="-224" y="192"></location><location id="id1" x="256" y="-224"></location><location id="id2" x="-312" y="64"><name x="-416" y="48">MovingDown</name></location><location id="id3" x="120" y="64"><name x="136" y="48">LoadingUnloading</name><committed/></location><location id="id4" x="112" y="-280"><name x="56" y="-320">MovingUp</name></location><location id="id5" x="-312" y="-280"><name x="-322" y="-310">Idle</name><label kind="invariant" x="-344" y="-256">x&lt;5</label></location><init ref="id5"/><transition><source ref="id5"/><target ref="id2"/><label kind="guard" x="-264" y="-72">(targetFloor&lt;currentFloor)</label><label kind="synchronisation" x="-264" y="-56">request!</label><nail x="-256" y="-96"/></transition><transition><source ref="id5"/><target ref="id4"/><label kind="guard" x="-136" y="-224">(targetFloor&gt;currentFloor)</label><label kind="synchronisation" x="-136" y="-240">request!</label><nail x="-96" y="-240"/></transition><transition><source ref="id5"/><target ref="id2"/><label kind="select" x="-472" y="-176">e:id_t</label><label kind="guard" x="-472" y="-160">(x&gt;1)&amp;&amp;(e&gt;elevatorf1)&amp;&amp;
+(e&gt;elevatorf2)</label><label kind="synchronisation" x="-472" y="-128">request_down[e]?</label><label kind="assignment" x="-472" y="-112">enqueue(e),
+movedown=1</label></transition><transition><source ref="id5"/><target ref="id5"/><label kind="guard" x="-560" y="-352">(x&gt;=1)&amp;&amp;(!moveup)
+&amp;&amp;(!movedown)</label><label kind="assignment" x="-560" y="-320">x=0</label><nail x="-432" y="-360"/><nail x="-432" y="-200"/></transition><transition><source ref="id0"/><target ref="id2"/><label kind="guard" x="-536" y="104">x&gt;=1</label><label kind="synchronisation" x="-536" y="88">request!</label><label kind="assignment" x="-536" y="120">currentFloor=currentFloor-1,
+elevatorf1=currentFloor,
+x=0</label><nail x="-416" y="192"/></transition><transition><source ref="id2"/><target ref="id0"/><label kind="guard" x="-304" y="120">(currentFloor&gt;targetFloor)</label></transition><transition><source ref="id1"/><target ref="id4"/><label kind="guard" x="264" y="-344">x&gt;=1</label><label kind="synchronisation" x="264" y="-288">request!</label><label kind="assignment" x="264" y="-328">currentFloor=currentFloor+1,
+elevatorf1=currentFloor,
+x=0</label><nail x="256" y="-408"/></transition><transition><source ref="id4"/><target ref="id1"/><label kind="guard" x="128" y="-216">(currentFloor&lt;targetFloor)</label></transition><transition><source ref="id2"/><target ref="id3"/><label kind="guard" x="-72" y="72">(currentFloor==targetFloor)</label><label kind="synchronisation" x="-72" y="88">ack[targetFloor]!</label><label kind="assignment" x="-72" y="104">dequeue(),
+target(),
+check()</label></transition><transition><source ref="id3"/><target ref="id5"/></transition><transition><source ref="id4"/><target ref="id3"/><label kind="guard" x="128" y="-144">(currentFloor==targetFloor)</label><label kind="synchronisation" x="128" y="-128">ack[targetFloor]!</label><label kind="assignment" x="128" y="-112">dequeue(),
+target(),
+check()</label></transition><transition><source ref="id5"/><target ref="id4"/><label kind="select" x="-176" y="-384">e:id_t</label><label kind="guard" x="-176" y="-368">(x&gt;1)&amp;&amp;(e&gt;elevatorf1)&amp;&amp;
+(e&gt;elevatorf2)</label><label kind="synchronisation" x="-176" y="-336">request_up[e]?</label><label kind="assignment" x="-176" y="-320">enqueue(e),
+moveup=1</label></transition></template><template><name>floor</name><parameter>const id_t floorNumber</parameter><location id="id6" x="8" y="160"><name x="40" y="152">DownRequest</name></location><location id="id7" x="16" y="-168"><name x="40" y="-184">UpRequest</name></location><location id="id8" x="-152" y="0"><name x="-200" y="-16">Idle</name></location><init ref="id8"/><transition><source ref="id6"/><target ref="id8"/><label kind="synchronisation" x="-256" y="72">ack[floorNumber]?</label><nail x="-128" y="128"/></transition><transition><source ref="id7"/><target ref="id8"/><label kind="synchronisation" x="-208" y="-176">ack[floorNumber]?</label><nail x="-120" y="-144"/></transition><transition><source ref="id8"/><target ref="id6"/><label kind="guard" x="-8" y="24">floorNumber&gt;0</label><label kind="synchronisation" x="-8" y="40">request_down[floorNumber]!</label><nail x="-16" y="32"/></transition><transition><source ref="id8"/><target ref="id7"/><label kind="guard" x="8" y="-112">floorNumber&lt;=(N-1)</label><label kind="synchronisation" x="8" y="-96">request_up[floorNumber]!</label><nail x="-16" y="-40"/></transition></template><template><name>elevator2</name><declaration>clock x;
+int currentFloor = 0;
+int targetFloor = 0;
+int list[20]; 
+int len = 0;
+bool moveup = 0;
+bool movedown = 0;
+
+//first element
+id_t front()
+{
+   	return list[0];
+}
+
+// last element
+id_t tail()
+{
+	return list[len - 1];
+}
+void target() {
+	targetFloor = front();
+}
+
+void check() {
+	if (len == 0) {
+		moveup = 0;
+		movedown = 0;
+	}
+}
+void sort(bool type, int n)
+{
+	int i, j, temp = 0;
+	bool swapped;
+	if (type) {
+		for (i = 0; i &lt; n - 1; i++) {
+		swapped = false;
+		for (j = 0; j &lt; n - i - 1; j++) {
+			if (list[j] &gt; list[j + 1]) {
+				temp = list[j];
+				list[j] = list[j+1];
+				list[j+1] = temp;
+				swapped = true;
+			}
+		}
+		if (swapped == false)
+		i = n;	// Break
+		}
+	} else {
+			for (i = 0; i &lt; n - 1; i++) {
+			swapped = false;
+			for (j = 0; j &lt; n - i - 1; j++) {
+			if (list[j] &lt; list[j + 1]) {
+				temp = list[j];
+				list[j] = list[j+1];
+				list[j+1] = temp;
+				swapped = true;
+			}
+		}
+		if (swapped == false)
+		i = n;	// Break
+		}
+	}
+}
+// Adding element to the queue and sorting it
+const bool Ascending = true;
+void enqueue(id_t element)
+{	
+        list[len] = element;
+	len++;
+	queue1 = len;
+	if (len &gt; 1) {
+		sort(Ascending, len);
+	}
+	target();
+}
+
+// Remove the front element of the queue
+void dequeue()
+{
+        int i = 0;
+        len--;
+	queue1 = len;
+        while (i &lt; len)
+        {
+                list[i] = list[i + 1];
+                i++;
+        }
+        list[i] = 0;
+}
+
+</declaration><location id="id9" x="-200" y="312"></location><location id="id10" x="264" y="-64"></location><location id="id11" x="120" y="200"><name x="136" y="184">LoadingUnloading</name><committed/></location><location id="id12" x="-304" y="200"><name x="-392" y="176">MovingDown</name></location><location id="id13" x="120" y="-128"><name x="80" y="-168">MovingUp</name></location><location id="id14" x="-304" y="-128"><name x="-314" y="-158">Idle</name><label kind="invariant" x="-314" y="-113">x&lt;5</label></location><init ref="id14"/><transition><source ref="id14"/><target ref="id12"/><label kind="guard" x="-240" y="56">(targetFloor&lt;currentFloor)</label><label kind="synchronisation" x="-240" y="72">request?</label><nail x="-240" y="48"/></transition><transition><source ref="id14"/><target ref="id13"/><label kind="guard" x="-160" y="-80">(targetFloor&gt;currentFloor)</label><label kind="synchronisation" x="-160" y="-64">request?</label><nail x="-80" y="-80"/></transition><transition><source ref="id9"/><target ref="id12"/><label kind="guard" x="-512" y="208">x&gt;=1</label><label kind="synchronisation" x="-512" y="224">request?</label><label kind="assignment" x="-512" y="240">currentFloor=currentFloor-1,
+elevatorf2=currentFloor,
+x=0</label><nail x="-392" y="312"/></transition><transition><source ref="id12"/><target ref="id9"/><label kind="guard" x="-304" y="256">(currentFloor&gt;targetFloor)</label></transition><transition><source ref="id14"/><target ref="id14"/><label kind="guard" x="-528" y="-200">(x&gt;=1)&amp;&amp;(!moveup)
+&amp;&amp;(!movedown)</label><label kind="assignment" x="-528" y="-168">x=0</label><nail x="-400" y="-224"/><nail x="-400" y="-48"/></transition><transition><source ref="id10"/><target ref="id13"/><label kind="guard" x="280" y="-224">x&gt;=1</label><label kind="synchronisation" x="280" y="-160">request?</label><label kind="assignment" x="280" y="-208">currentFloor=currentFloor+1,
+elevatorf2=currentFloor,
+x=0</label><nail x="264" y="-264"/></transition><transition><source ref="id13"/><target ref="id10"/><label kind="guard" x="144" y="-104">(currentFloor&lt;targetFloor)</label></transition><transition><source ref="id12"/><target ref="id11"/><label kind="guard" x="-88" y="208">currentFloor==targetFloor</label><label kind="synchronisation" x="-88" y="224">ack[targetFloor]!</label><label kind="assignment" x="-88" y="240">dequeue(),
+target(),
+check()</label></transition><transition><source ref="id14"/><target ref="id12"/><label kind="select" x="-464" y="-24">e:id_t</label><label kind="guard" x="-464" y="-8">(x&gt;1)&amp;&amp;(e&gt;elevatorf1)&amp;&amp;
+(e&gt;elevatorf2)</label><label kind="synchronisation" x="-464" y="24">request_down[e]?</label><label kind="assignment" x="-464" y="40">enqueue(e),
+movedown=1</label></transition><transition><source ref="id11"/><target ref="id14"/></transition><transition><source ref="id13"/><target ref="id11"/><label kind="guard" x="136" y="8">(currentFloor==targetFloor)</label><label kind="synchronisation" x="136" y="24">ack[targetFloor]!</label><label kind="assignment" x="136" y="40">dequeue(),
+target(),
+check()</label></transition><transition><source ref="id14"/><target ref="id13"/><label kind="select" x="-152" y="-232">e:id_t</label><label kind="guard" x="-152" y="-216">(x&gt;1)&amp;&amp;(e&gt;elevatorf1)
+&amp;&amp;(e&lt;elevatorf2)</label><label kind="synchronisation" x="-152" y="-184">request_up[e]?</label><label kind="assignment" x="-152" y="-168">enqueue(e),
+moveup=1</label></transition></template><system>system elevator1,elevator2,floor;</system></nta>
